@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body, #root {
+    @apply h-full;
+  }
+  body {
+    @apply bg-slate-950 text-slate-100 antialiased;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans JP',
+      'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-slate-900 border border-slate-800 rounded-xl shadow-lg;
+  }
+  .card-hover {
+    @apply transition hover:border-slate-600 hover:bg-slate-800/60;
+  }
+  .input {
+    @apply bg-slate-800 border border-slate-700 rounded-md px-2 py-1
+      text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500
+      focus:border-sky-500 w-full;
+  }
+  .input-num {
+    @apply input text-right tabular-nums;
+  }
+  .label {
+    @apply text-slate-400 text-sm;
+  }
+  .stat {
+    @apply font-mono tabular-nums;
+  }
+  .stat-pos {
+    @apply text-emerald-400;
+  }
+  .stat-neg {
+    @apply text-rose-400;
+  }
+  .table-mini {
+    @apply w-full text-sm;
+  }
+  .table-mini th {
+    @apply px-2 py-1 text-left font-medium text-slate-400 border-b border-slate-800;
+  }
+  .table-mini td {
+    @apply px-2 py-1 border-b border-slate-800/60 align-middle;
+  }
+  .btn {
+    @apply inline-flex items-center gap-1 px-3 py-1.5 rounded-md
+      bg-slate-800 border border-slate-700 hover:bg-slate-700
+      text-slate-100 text-sm transition;
+  }
+  .btn-danger {
+    @apply btn hover:bg-rose-900/40 hover:border-rose-700;
+  }
+}
