@@ -1,14 +1,16 @@
 import { useMemo } from 'react'
 import PageHeader from '../components/PageHeader'
 import NumberInput from '../components/NumberInput'
+import ScenarioRows from '../components/ScenarioRows'
 import { useLocalStorage } from '../lib/useLocalStorage'
-import { fmt, signClass } from '../lib/format'
+import { fmt } from '../lib/format'
 import {
   TALENT_MAX,
   TALENT_MIN,
   talentCost,
   type TalentRarity,
 } from '../lib/materials'
+import { binomialPMF } from '../lib/probability'
 
 type Row = {
   id: string
@@ -46,11 +48,12 @@ export default function Talent() {
     return acc
   }, [state.rows])
 
-  // Excel に忠実な計算:
-  //   - 「週ボス（×2）」: ★N余り÷3 ×2 を ★(N+1) へ流す（連鎖）
-  //   - 「通常（×1）」  : ★N余り÷3 ×1 を ★(N+1) へ流す（連鎖）
-  //   - 「期待値（×1.1）」: 通常の余りに対して 1.1倍した「期待ドロップ数」を ★(N+1) へ
-  //                         加算（端数切捨てなし、Excel E11/F11 と同じ式）
+  // 繰上シナリオの計算:
+  //   - 「最低（×1）」: ★N余り÷3 ×1 を ★(N+1) へ流す（連鎖、floor）
+  //   - 「最高（×2）」: ★N余り÷3 ×2 を ★(N+1) へ流す（連鎖、floor）
+  //   - 「期待値」: 充足確率と同じ分布（K~Bin(n,0.1)）に基づく厳密な期待値。
+  //       ★3 繰上獲得 = n3 * 1.1
+  //       ★4 繰上獲得 = 1.1 * Σ_{k3} pmf3[k3] * n4(k3)
   const carry = useMemo(() => {
     const chainInt = (factor: number) => {
       const gain: Record<TalentRarity, number> = { 2: 0, 3: 0, 4: 0 }
@@ -63,58 +66,67 @@ export default function Talent() {
       return { gain, surplus }
     }
 
-    const normal = chainInt(1)
+    const surplus2 = state.owned[2] - totals[2]
+    const n3 = Math.max(0, Math.floor(surplus2 / 3))
+    const expGain3 = n3 * 1.1
+    const pmf3 = binomialPMF(n3, 0.1)
+    let expN4 = 0
+    for (let k3 = 0; k3 <= n3; k3++) {
+      const s3 = state.owned[3] + n3 + k3 - totals[3]
+      const n4 = Math.max(0, Math.floor(s3 / 3))
+      expN4 += pmf3[k3] * n4
+    }
+    const expGain4 = expN4 * 1.1
+
     const gainExp: Record<TalentRarity, number> = {
       2: 0,
-      3: Math.max(0, (normal.surplus[2] * 1.1) / 3),
-      4: Math.max(0, (normal.surplus[3] * 1.1) / 3),
+      3: expGain3,
+      4: expGain4,
     }
     const expectSurplus: Record<TalentRarity, number> = {
-      2: normal.surplus[2],
-      3: state.owned[3] + gainExp[3] - totals[3],
-      4: state.owned[4] + gainExp[4] - totals[4],
+      2: surplus2,
+      3: state.owned[3] + expGain3 - totals[3],
+      4: state.owned[4] + expGain4 - totals[4],
     }
 
     return {
       boss: chainInt(2),
-      normal,
+      normal: chainInt(1),
       expect: { gain: gainExp, surplus: expectSurplus },
     }
   }, [state.owned, totals])
 
-  // 充足確率（モンテカルロシミュレーション）
-  //   繰上1回あたり: 90% で +1個, 10% で +2個 を受け取る分布。
-  //   ★N の繰上回数は floor(★N 余り / 3) で固定し、ドロップだけを試行する。
-  //   ★2 は繰上の起点なので所持 - 必要が0以上なら 100%、不足なら 0%（決定的）。
+  // トータル充足確率（厳密計算）
+  //   繰上1回のドロップ: 90% で +1個, 10% で +2個。
+  //   n 回ぶんの合計を G とすると、+2個になった回数 K ~ Binomial(n, 0.1) で G = n + K。
+  //   ★2 が不足なら 0。それ以外は K3 の各実現で
+  //     ★3 充足 (s3 ≥ 0) かつ ★4 充足 (owned[4] + n4 + K4 ≥ totals[4])
+  //   となる確率を K3 周辺化で合算する。
   const probability = useMemo(() => {
-    const trials = 10000
     const surplus2 = state.owned[2] - totals[2]
-    const n3 = Math.max(0, Math.floor(surplus2 / 3))
-    let count3 = 0
-    let count4 = 0
+    if (surplus2 < 0) return 0
 
-    for (let i = 0; i < trials; i++) {
-      let gain3 = 0
-      for (let j = 0; j < n3; j++) {
-        gain3 += Math.random() < 0.9 ? 1 : 2
-      }
-      const s3 = state.owned[3] + gain3 - totals[3]
-      if (s3 >= 0) count3 += 1
+    const n3 = Math.max(0, Math.floor(surplus2 / 3))
+    const pmf3 = binomialPMF(n3, 0.1)
+
+    let total = 0
+    for (let k3 = 0; k3 <= n3; k3++) {
+      const s3 = state.owned[3] + n3 + k3 - totals[3]
+      if (s3 < 0) continue
 
       const n4 = Math.max(0, Math.floor(s3 / 3))
-      let gain4 = 0
-      for (let j = 0; j < n4; j++) {
-        gain4 += Math.random() < 0.9 ? 1 : 2
+      const k4Need = Math.max(0, Math.ceil(totals[4] - state.owned[4] - n4))
+      if (k4Need > n4) continue
+
+      const pmf4 = binomialPMF(n4, 0.1)
+      let pSuf4 = 0
+      for (let k4 = k4Need; k4 <= n4; k4++) {
+        pSuf4 += pmf4[k4]
       }
-      const s4 = state.owned[4] + gain4 - totals[4]
-      if (s4 >= 0) count4 += 1
+      total += pmf3[k3] * pSuf4
     }
 
-    return {
-      2: surplus2 >= 0 ? 1 : 0,
-      3: count3 / trials,
-      4: count4 / trials,
-    } as Record<TalentRarity, number>
+    return total
   }, [state.owned, totals])
 
   const updateRow = (id: string, patch: Partial<Row>) => {
@@ -161,8 +173,8 @@ export default function Talent() {
         }
       />
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <div className="card p-4 lg:col-span-2">
+      <div className="grid gap-4">
+        <div className="card p-4">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-semibold">天賦行</h2>
             <button className="btn" onClick={addRow}>
@@ -298,84 +310,41 @@ export default function Talent() {
               </thead>
               <tbody>
                 <ScenarioRows
+                  rarities={RARITIES}
                   title="最低（×1）"
                   gain={carry.normal.gain}
                   surplus={carry.normal.surplus}
                 />
                 <ScenarioRows
+                  rarities={RARITIES}
                   title="最高（×2）"
                   gain={carry.boss.gain}
                   surplus={carry.boss.surplus}
                 />
                 <ScenarioRows
-                  title="期待値（×1.1）"
+                  rarities={RARITIES}
+                  title="期待値"
                   gain={carry.expect.gain}
                   surplus={carry.expect.surplus}
-                  probability={probability}
                   decimals={1}
                 />
               </tbody>
             </table>
           </div>
         </div>
+
+        <div className="card p-4 space-y-2">
+          <h2 className="font-semibold">充足確率</h2>
+          <p
+            className={`text-3xl stat ${
+              probability >= 1 ? 'stat-pos' : 'text-slate-100'
+            }`}
+          >
+            {`${(probability * 100).toFixed(1)}%`}
+          </p>
+        </div>
       </div>
     </div>
   )
 }
 
-function ScenarioRows({
-  title,
-  gain,
-  surplus,
-  probability,
-  decimals = 0,
-}: {
-  title: string
-  gain: Record<TalentRarity, number>
-  surplus: Record<TalentRarity, number>
-  probability?: Record<TalentRarity, number>
-  decimals?: number
-}) {
-  const rowSpan = probability ? 3 : 2
-  return (
-    <>
-      <tr>
-        <td rowSpan={rowSpan} className="font-medium align-top">
-          {title}
-        </td>
-        <td className="text-slate-400">繰上獲得</td>
-        {RARITIES.map((r) => (
-          <td key={r} className="text-right stat text-slate-300">
-            {fmt(gain[r], decimals)}
-          </td>
-        ))}
-      </tr>
-      <tr className={probability ? '' : 'border-b border-slate-800'}>
-        <td className="text-slate-400">最終余り</td>
-        {RARITIES.map((r) => (
-          <td
-            key={r}
-            className={`text-right stat ${signClass(surplus[r])}`}
-          >
-            {fmt(surplus[r], decimals)}
-          </td>
-        ))}
-      </tr>
-      {probability ? (
-        <tr className="border-b border-slate-800">
-          <td className="text-slate-400">充足確率</td>
-          {RARITIES.map((r) => (
-            <td
-              key={r}
-              className={`text-right stat ${
-                probability[r] >= 1 ? 'stat-pos' : 'text-slate-300'
-              }`}
-            >
-              {`${(probability[r] * 100).toFixed(1)}%`}
-            </td>
-          ))}
-        </tr>
-      ) : null}
-    </>
-  )
-}
