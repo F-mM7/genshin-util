@@ -3,6 +3,8 @@ import Home from './pages/Home'
 import Resin from './pages/Resin'
 import Talent from './pages/Talent'
 import Weapon from './pages/Weapon'
+import Damage from './pages/Damage'
+import ArtifactExp from './pages/ArtifactExp'
 
 export default function App() {
   return (
@@ -12,6 +14,8 @@ export default function App() {
         <Route path="/resin" element={<Resin />} />
         <Route path="/talent" element={<Talent />} />
         <Route path="/weapon" element={<Weapon />} />
+        <Route path="/damage" element={<Damage />} />
+        <Route path="/artifact-exp" element={<ArtifactExp />} />
         <Route
           path="*"
           element={

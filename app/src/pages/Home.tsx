@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { ROUTES, type Category } from '../routes'
 
-const CATEGORY_ORDER: Category[] = ['樹脂', '素材']
+const CATEGORY_ORDER: Category[] = ['樹脂', '素材', 'ダメージ', '聖遺物']
 
 export default function Home() {
   const grouped = CATEGORY_ORDER.map((cat) => ({
@@ -16,7 +16,7 @@ export default function Home() {
           原神ユーティリティ
         </h1>
         <p className="mt-2 text-slate-400 text-sm">
-          Excelで管理していた計算をブラウザで再現。入力はlocalStorageに自動保存されます。
+          入力した値は自動で保存されます。
         </p>
       </section>
 

@@ -1,4 +1,4 @@
-export type Category = '素材' | '樹脂'
+export type Category = '素材' | '樹脂' | 'ダメージ' | '聖遺物'
 
 export type RouteDef = {
   path: string
@@ -26,8 +26,22 @@ export const ROUTES: RouteDef[] = [
   {
     path: '/weapon',
     title: '武器突破素材',
-    description: '武器突破素材の必要数と所持差分（繰上含む）',
+    description: '武器のレアリティと現在→目標突破段階から必要素材数と充足確率を計算',
     category: '素材',
     icon: '⚔️',
+  },
+  {
+    path: '/damage',
+    title: 'ダメージ計算',
+    description: 'ステータスとバフから評価値・会心バランス・杯トレードオフを計算',
+    category: 'ダメージ',
+    icon: '💥',
+  },
+  {
+    path: '/artifact-exp',
+    title: '聖遺物経験値',
+    description: '現在Lv→目標Lvに必要な聖遺物経験値素材を最小コストで算出',
+    category: '聖遺物',
+    icon: '🏵️',
   },
 ]
