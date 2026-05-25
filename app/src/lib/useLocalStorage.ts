@@ -42,7 +42,9 @@ export function useLocalStorage<T>(
   initial: Initial<T>
 ): [T, (next: T | ((prev: T) => T)) => void, () => void] {
   const initialRef = useRef(initial)
-  initialRef.current = initial
+  useEffect(() => {
+    initialRef.current = initial
+  })
 
   const [state, setState] = useState<T>(() => readStorage(key, resolve(initial)))
 

@@ -22,6 +22,9 @@ export default function NumberInput({
   const [text, setText] = useState(String(value))
 
   useEffect(() => {
+    // 外部から渡される value が変わったときに表示テキストを同期する。
+    // ユーザーが編集中の prev と数値的に等しい場合（例: '1' と '1.0'）はそのまま残す。
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setText((prev) => {
       const parsed = Number(prev)
       if (Number.isFinite(parsed) && parsed === value) return prev
