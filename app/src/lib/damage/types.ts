@@ -48,7 +48,6 @@ export type PresetCategory =
   | 'artifact'
   | 'character'
   | 'team'
-  | 'other'
 
 export type BuffPreset = {
   id: string
@@ -68,7 +67,6 @@ export type TradeoffChange = Partial<
 
 export type TradeoffAnalysis = {
   name: string
-  description: string
   currentValue: number
   newValue: number
   improvement: number
@@ -86,18 +84,11 @@ export type TradeoffMatrixCell = {
 
 export type MainStatTradeoff = {
   name: string
-  currentValue: number
   newValue: number
   improvement: number
-  beneficial: boolean
-  description: string
 }
 
 export type BalanceResult = {
-  critRateDeficit: boolean
-  critDamageDeficit: boolean
-  recommendation: string
-  tradeoffs: TradeoffAnalysis[]
   tradeoffMatrix: TradeoffMatrixCell[][]
 }
 

@@ -1,6 +1,5 @@
 import {
   ENHANCE_FACTORS,
-  MATERIAL_LABELS,
   MATERIAL_ORDER,
 } from '../../lib/artifact/constants'
 import type { StepEnd } from '../../lib/artifact/calc'
@@ -155,7 +154,7 @@ export default function MaterialCalculator({
                       }`}
                       onClick={() => onMaterialToggle(m)}
                     >
-                      {MATERIAL_LABELS[m]}
+                      {m}
                     </button>
                   </td>
                   <td className="text-right stat">

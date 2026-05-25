@@ -13,7 +13,7 @@ export type SubstatValues = Partial<Record<SubstatType, number>>
 
 export type MaterialToggleState = Record<MaterialType, boolean>
 
-export type MaterialUsage = Record<Exclude<MaterialType, never>, number>
+export type MaterialUsage = Record<MaterialType, number>
 
 export type TargetArtifact = {
   val: number[]

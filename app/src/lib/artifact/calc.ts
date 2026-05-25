@@ -17,7 +17,7 @@ import type {
   TargetArtifact,
 } from './types'
 
-export function getCumExp(rarity: ArtifactRarity): number[] {
+function getCumExp(rarity: ArtifactRarity): number[] {
   return rarity === 5 ? CUM_EXP_5STAR : CUM_EXP_4STAR
 }
 
@@ -36,7 +36,7 @@ export function calculateSubstatValue(
   return (SUBSTATS[substat] / CALCULATION_CONSTANTS.SUBSTAT_DIVISOR) * factor
 }
 
-export function enumerateArrays(n: number, m: number): number[][] {
+function enumerateArrays(n: number, m: number): number[][] {
   const result: number[][] = []
 
   const generate = (current: number[]): void => {
@@ -55,12 +55,12 @@ export function enumerateArrays(n: number, m: number): number[][] {
   return result
 }
 
-export type ExpRequirement = {
+type ExpRequirement = {
   expReq: number
   expCap: number
 }
 
-export function calculateExpRequirement(
+function calculateExpRequirement(
   currentLevel: number,
   currentExp: number,
   requiredEnhances: number,
@@ -86,12 +86,12 @@ export function calculateExpRequirement(
   return { expReq, expCap }
 }
 
-export type MaterialUsageResult = {
+type MaterialUsageResult = {
   usage: MaterialUsage
   totalExp: number
 }
 
-export function calculateMaterialUsage(
+function calculateMaterialUsage(
   expNeeded: number,
   enabledMaterials: MaterialToggleState
 ): MaterialUsageResult {
@@ -167,7 +167,7 @@ export function calculateMaterialUsage(
   return { usage: bestUsage, totalExp: minCost }
 }
 
-export function calculateRequiredEnhances(
+function calculateRequiredEnhances(
   selectedSubstats: SubstatType[],
   substatValues: SubstatValues,
   targetArtifacts: TargetArtifact[]
@@ -211,7 +211,7 @@ export function calculateRequiredEnhances(
   return minEnhances
 }
 
-export type ApplyExpGainResult = {
+type ApplyExpGainResult = {
   level: number
   exp: number
 }
@@ -242,7 +242,7 @@ export type StepEnd = {
   exp: number
 }
 
-export type MaterialPlan = {
+type MaterialPlan = {
   materialUsage: MaterialUsage
   expReq: number
   expCap: number

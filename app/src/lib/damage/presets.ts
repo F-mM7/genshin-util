@@ -341,7 +341,6 @@ const CATEGORY_LABELS: Record<PresetCategory, string> = {
   artifact: '聖遺物',
   character: 'キャラクター',
   team: 'チーム',
-  other: 'その他',
 }
 
 const WEAPON_TYPE_LABELS: Record<WeaponType, string> = {

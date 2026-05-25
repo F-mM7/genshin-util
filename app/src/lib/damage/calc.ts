@@ -186,7 +186,6 @@ function calculateBalance(stats: Stats, statType: StatType): BalanceResult {
   const tradeoffs: TradeoffAnalysis[] = [
     {
       name: '会心率↑、会心ダメージ↓',
-      description: '',
       currentValue,
       newValue: critRateUpValue,
       improvement: critRateUpValue - currentValue,
@@ -204,7 +203,6 @@ function calculateBalance(stats: Stats, statType: StatType): BalanceResult {
     },
     {
       name: '会心ダメージ↑、会心率↓',
-      description: '',
       currentValue,
       newValue: critDamageUpValue,
       improvement: critDamageUpValue - currentValue,
@@ -222,7 +220,6 @@ function calculateBalance(stats: Stats, statType: StatType): BalanceResult {
     },
     {
       name: `${statName}%↑、会心率↓`,
-      description: '',
       currentValue,
       newValue: statUpFromCritRateValue,
       improvement: statUpFromCritRateValue - currentValue,
@@ -240,7 +237,6 @@ function calculateBalance(stats: Stats, statType: StatType): BalanceResult {
     },
     {
       name: `${statName}%↑、会心ダメージ↓`,
-      description: '',
       currentValue,
       newValue: statUpFromCritDamageValue,
       improvement: statUpFromCritDamageValue - currentValue,
@@ -258,7 +254,6 @@ function calculateBalance(stats: Stats, statType: StatType): BalanceResult {
     },
     {
       name: `会心率↑、${statName}%↓`,
-      description: '',
       currentValue,
       newValue: critRateUpFromStatValue,
       improvement: critRateUpFromStatValue - currentValue,
@@ -276,7 +271,6 @@ function calculateBalance(stats: Stats, statType: StatType): BalanceResult {
     },
     {
       name: `会心ダメージ↑、${statName}%↓`,
-      description: '',
       currentValue,
       newValue: critDamageUpFromStatValue,
       improvement: critDamageUpFromStatValue - currentValue,
@@ -294,21 +288,9 @@ function calculateBalance(stats: Stats, statType: StatType): BalanceResult {
     },
   ]
 
-  const beneficialTradeoffs = tradeoffs.filter((t) => t.beneficial)
-  const recommendation =
-    beneficialTradeoffs.length === 0
-      ? '現在のバランスは良好です。どの交換でも評価値は下がります。'
-      : `次の交換で評価値が向上します:\n${beneficialTradeoffs
-          .map((t) => `${t.name}: ${t.description}`)
-          .join('\n')}`
-
   const tradeoffMatrix = buildTradeoffMatrix(tradeoffs, statType)
 
   return {
-    critRateDeficit: critRateUpBeneficial || critRateUpFromStatBeneficial,
-    critDamageDeficit: critDamageUpBeneficial || critDamageUpFromStatBeneficial,
-    recommendation,
-    tradeoffs,
     tradeoffMatrix,
   }
 }
@@ -389,19 +371,13 @@ function calculateMainStatTradeoffs(
   return [
     {
       name: `${statName}%杯 → ダメージバフ杯`,
-      currentValue: currentEvaluation,
       newValue: newValueStatToDamage,
       improvement: newValueStatToDamage - currentEvaluation,
-      beneficial: newValueStatToDamage > currentEvaluation,
-      description: `${statName}${statDelta.toFixed(0)}減少、ダメージバフ${buffDelta}%増加`,
     },
     {
       name: `ダメージバフ杯 → ${statName}%杯`,
-      currentValue: currentEvaluation,
       newValue: newValueDamageToStat,
       improvement: newValueDamageToStat - currentEvaluation,
-      beneficial: newValueDamageToStat > currentEvaluation,
-      description: `${statName}${statDelta.toFixed(0)}増加、ダメージバフ${buffDelta}%減少`,
     },
   ]
 }
