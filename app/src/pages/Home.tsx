@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { ROUTES, type Category } from '../routes'
 
-const CATEGORY_ORDER: Category[] = ['樹脂', '素材', 'ダメージ', '聖遺物']
+const CATEGORY_ORDER: Category[] = ['聖遺物', '樹脂', '素材', 'ダメージ']
 
 export default function Home() {
   const grouped = CATEGORY_ORDER.map((cat) => ({
@@ -15,9 +15,6 @@ export default function Home() {
         <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
           原神ユーティリティ
         </h1>
-        <p className="mt-2 text-slate-400 text-sm">
-          入力した値は自動で保存されます。
-        </p>
       </section>
 
       {grouped.map((g) => (
@@ -30,14 +27,11 @@ export default function Home() {
               <Link
                 key={r.path}
                 to={r.path}
-                className="card card-hover p-4 flex gap-3 items-start"
+                className="card card-hover p-4 flex gap-3 items-center"
               >
                 <div className="text-3xl leading-none">{r.icon}</div>
                 <div className="flex-1 min-w-0">
                   <div className="text-base font-semibold">{r.title}</div>
-                  <div className="mt-1 text-sm text-slate-400 line-clamp-2">
-                    {r.description}
-                  </div>
                 </div>
               </Link>
             ))}
