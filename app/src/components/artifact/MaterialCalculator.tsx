@@ -1,5 +1,6 @@
 import {
   ENHANCE_FACTORS,
+  MATERIALS,
   MATERIAL_ORDER,
 } from '../../lib/artifact/constants'
 import type { StepEnd } from '../../lib/artifact/calc'
@@ -13,6 +14,9 @@ import type {
 
 const TARGET_LEVELS: TargetLevel[] = ['auto', 4, 8, 12, 16, 20]
 const CAP_DIVISORS = [1, 2, 5] as const
+
+const stepExp = (u: MaterialUsage) =>
+  MATERIAL_ORDER.reduce((sum, m) => sum + u[m] * MATERIALS[m], 0)
 
 type Props = {
   expReq: number
@@ -168,6 +172,20 @@ export default function MaterialCalculator({
                 </tr>
               )
             })}
+            <tr className="border-t border-slate-700">
+              <td className="label text-xs text-center">投入exp</td>
+              <td className="text-right stat">
+                {givenExp ? fmt(givenExp) : ''}
+              </td>
+              {futureMaterialUsages.map((u, i) => {
+                const e = stepExp(u)
+                return (
+                  <td key={i} className="text-right stat text-slate-500">
+                    {e ? fmt(e) : ''}
+                  </td>
+                )
+              })}
+            </tr>
           </tbody>
         </table>
       </div>
