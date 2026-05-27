@@ -44,10 +44,10 @@ export const MATERIALS: Record<'lv1' | 'lv2' | 'lv3' | 'lv4' | 'unc' | 'ess', nu
 }
 
 export const MATERIAL_ORDER: (keyof MaterialUsage)[] = [
-  'lv4',
-  'lv3',
-  'lv2',
   'lv1',
+  'lv2',
+  'lv3',
+  'lv4',
   'unc',
   'ess',
 ]
