@@ -246,6 +246,7 @@ export default function Weapon() {
                       <div className="flex items-center gap-1">
                         <button
                           type="button"
+                          tabIndex={-1}
                           className="w-6 h-6 shrink-0 flex items-center justify-center rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs"
                           onClick={() => setOwned(r, state.owned[r] - 1)}
                           aria-label={`${STAR(r)}を減らす`}
@@ -259,6 +260,7 @@ export default function Weapon() {
                         />
                         <button
                           type="button"
+                          tabIndex={-1}
                           className="w-6 h-6 shrink-0 flex items-center justify-center rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs"
                           onClick={() => setOwned(r, state.owned[r] + 1)}
                           aria-label={`${STAR(r)}を増やす`}
