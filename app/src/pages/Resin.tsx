@@ -7,7 +7,10 @@ import { fmt } from '../lib/format'
 type State = {
   /** datetime-local 形式 'YYYY-MM-DDTHH:mm' */
   accessAt: string
+  /** 記録時点の樹脂量 */
   currentResin: number
+  /** currentResin を記録した時刻 (epoch ms) */
+  currentResinAt: number
   fragileResin: number
   /** アクセス予定時刻までに消費する樹脂量 */
   plannedSpend: number
@@ -16,6 +19,7 @@ type State = {
 const makeInitial = (): State => ({
   accessAt: nextHour(5, new Date()),
   currentResin: 30,
+  currentResinAt: Date.now(),
   fragileResin: 2,
   plannedSpend: 0,
 })
@@ -83,6 +87,14 @@ function clamp(n: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, n))
 }
 
+const RESIN_TICK_MS = 8 * 60 * 1000
+
+/** 記録時点の値・時刻から、経過時間分の自動回復を反映した現在値を導出する */
+function liveResin(base: number, baseAt: number, now: Date): number {
+  const ticks = Math.max(0, Math.floor((now.getTime() - baseAt) / RESIN_TICK_MS))
+  return clamp(base + ticks, 0, 200)
+}
+
 function ResinRow({
   id,
   label,
@@ -133,13 +145,15 @@ function ResinRow({
 }
 
 export default function Resin() {
-  const [state, setState, reset] = useLocalStorage<State>('resin', makeInitial)
+  const [state, setState, reset] = useLocalStorage<State>('resin-v2', makeInitial)
   const [now, setNow] = useState(() => new Date())
 
   useEffect(() => {
     const id = window.setInterval(() => setNow(new Date()), 30 * 1000)
     return () => window.clearInterval(id)
   }, [])
+
+  const currentResin = liveResin(state.currentResin, state.currentResinAt, now)
 
   const accessDate = parseLocalIso(state.accessAt)
   const datePart = state.accessAt ? state.accessAt.split('T')[0] : ''
@@ -148,7 +162,7 @@ export default function Resin() {
     ? (accessDate.getTime() - now.getTime()) / 1000 / 60
     : 0
   const recover = remainMin / 8
-  const capacity = 200 - state.currentResin + (5 - state.fragileResin) * 60
+  const capacity = 200 - currentResin + (5 - state.fragileResin) * 60
   const overflow = Math.max(0, recover - capacity)
   const disposable = Math.max(0, overflow - state.plannedSpend)
   const isPast = remainMin < 0
@@ -273,17 +287,22 @@ export default function Resin() {
             <ResinRow
               id="cur"
               label="現在樹脂"
-              value={state.currentResin}
+              value={currentResin}
               min={0}
               max={200}
               steps={[-10, -1, 1, 10]}
               onChange={(v) =>
-                setState((s) => ({ ...s, currentResin: v }))
+                setState((s) => ({
+                  ...s,
+                  currentResin: v,
+                  currentResinAt: Date.now(),
+                }))
               }
               onShift={(delta) =>
                 setState((s) => ({
                   ...s,
-                  currentResin: clamp(s.currentResin + delta, 0, 200),
+                  currentResin: clamp(currentResin + delta, 0, 200),
+                  currentResinAt: Date.now(),
                 }))
               }
             />
