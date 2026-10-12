@@ -218,6 +218,118 @@ check('weapon ★5 0->1', weaponBreakCost(5, 0, 1), { 2: 5, 3: 0, 4: 0, 5: 0 })
 check('weapon ★5 5->6', weaponBreakCost(5, 5, 6), { 2: 0, 3: 0, 4: 0, 5: 6 })
 check('weapon ★4 2->4', weaponBreakCost(4, 2, 4), { 2: 0, 3: 6, 4: 3, 5: 0 })
 
+// === 秘境IVドロップ (domainDrops.ts) ===
+// docs/domain-drop-rates.md の推定モデル。1周の同時分布を求め、runs 回畳み込む
+//   天賦IV: 固定★2 2個80%/3個20% + 枠 2枠80%/3枠20%、各枠 ★3 90% / ★4 10%
+//   武器IV: 固定★2 2個80%/3個20% + 枠 2枠10%/3枠70%/4枠20%、各枠 ★3 78% / ★4 20% / ★5 2%
+const TALENT_DROP_MODEL = {
+  rarities: [2, 3, 4],
+  fixed: [[2, 0.8], [3, 0.2]],
+  slots: [[2, 0.8], [3, 0.2]],
+  slotRarity: [[3, 0.9], [4, 0.1]],
+}
+const WEAPON_DROP_MODEL = {
+  rarities: [2, 3, 4, 5],
+  fixed: [[2, 0.8], [3, 0.2]],
+  slots: [[2, 0.1], [3, 0.7], [4, 0.2]],
+  slotRarity: [[3, 0.78], [4, 0.2], [5, 0.02]],
+}
+
+function zeroCounts(rarities) {
+  return Object.fromEntries(rarities.map((r) => [r, 0]))
+}
+
+function mergeOutcomes(list) {
+  const map = new Map()
+  for (const o of list) {
+    const key = JSON.stringify(o.counts)
+    const prev = map.get(key)
+    if (prev) prev.p += o.p
+    else map.set(key, { counts: o.counts, p: o.p })
+  }
+  return [...map.values()]
+}
+
+function singleRunDrops(model) {
+  const out = []
+  for (const [fixedN, fixedP] of model.fixed) {
+    for (const [slotN, slotP] of model.slots) {
+      // 枠ごとのレアリティを順に展開
+      let dist = [{ counts: { ...zeroCounts(model.rarities), 2: fixedN }, p: fixedP * slotP }]
+      for (let i = 0; i < slotN; i++) {
+        const next = []
+        for (const o of dist) {
+          for (const [r, rp] of model.slotRarity) {
+            next.push({ counts: { ...o.counts, [r]: o.counts[r] + 1 }, p: o.p * rp })
+          }
+        }
+        dist = mergeOutcomes(next)
+      }
+      out.push(...dist)
+    }
+  }
+  return mergeOutcomes(out)
+}
+
+function domainDrops(model, runs) {
+  let dist = [{ counts: zeroCounts(model.rarities), p: 1 }]
+  const one = singleRunDrops(model)
+  for (let i = 0; i < runs; i++) {
+    const next = []
+    for (const a of dist) {
+      for (const b of one) {
+        const counts = {}
+        for (const r of model.rarities) counts[r] = a.counts[r] + b.counts[r]
+        next.push({ counts, p: a.p * b.p })
+      }
+    }
+    dist = mergeOutcomes(next)
+  }
+  return dist
+}
+
+// 周辺分布を小数1桁の%に丸める (index = 個数)
+function marginalPct(dist, rarity, maxCount) {
+  const pct = Array(maxCount + 1).fill(0)
+  for (const o of dist) pct[o.counts[rarity]] += o.p
+  return pct.map((p) => Number((p * 100).toFixed(1)))
+}
+
+function expectation(dist, rarity) {
+  return dist.reduce((s, o) => s + o.p * o.counts[rarity], 0)
+}
+
+// (a) 1周の周辺分布が資料表と一致 (docs/domain-drop-rates.md、小数1桁)
+const talent1 = domainDrops(TALENT_DROP_MODEL, 1)
+check('domain talent 1run ★2(教え) %', marginalPct(talent1, 2, 3), [0, 0, 80, 20])
+check('domain talent 1run ★3(導き) %', marginalPct(talent1, 3, 3), [0.8, 14.9, 69.7, 14.6])
+check('domain talent 1run ★4(哲学) %', marginalPct(talent1, 4, 3), [79.4, 19.3, 1.3, 0])
+const weapon1 = domainDrops(WEAPON_DROP_MODEL, 1)
+check('domain weapon 1run ★2 %', marginalPct(weapon1, 2, 3), [0, 0, 80, 20])
+check('domain weapon 1run ★3 %', marginalPct(weapon1, 3, 4), [1.3, 12, 37.7, 41.6, 7.4])
+check('domain weapon 1run ★4 %', marginalPct(weapon1, 4, 4), [50.4, 38.3, 10.2, 1.1, 0])
+check('domain weapon 1run ★5 %', marginalPct(weapon1, 5, 4), [93.9, 5.9, 0.1, 0, 0])
+
+// runs=0 は全0・p=1 の1要素
+check('domain talent 0run', domainDrops(TALENT_DROP_MODEL, 0), [{ counts: { 2: 0, 3: 0, 4: 0 }, p: 1 }])
+check('domain weapon 0run', domainDrops(WEAPON_DROP_MODEL, 0), [{ counts: { 2: 0, 3: 0, 4: 0, 5: 0 }, p: 1 }])
+
+// (b) runs=0..3 で p の総和 = 1
+// (c) n周の期待値 = n × 1周の期待値 (天賦 ★2 2.2/★3 1.98/★4 0.22、武器 ★2 2.2/★3 2.418/★4 0.62/★5 0.062)
+const DROP_EXPECT_1RUN = [
+  ['talent', TALENT_DROP_MODEL, { 2: 2.2, 3: 1.98, 4: 0.22 }],
+  ['weapon', WEAPON_DROP_MODEL, { 2: 2.2, 3: 2.418, 4: 0.62, 5: 0.062 }],
+]
+for (const [label, model, exp1] of DROP_EXPECT_1RUN) {
+  for (const runs of [0, 1, 2, 3]) {
+    const dist = domainDrops(model, runs)
+    checkNum(`domain ${label} ${runs}run sum p`, dist.reduce((s, o) => s + o.p, 0), 1, 1e-9)
+    for (const r of model.rarities) {
+      checkNum(`domain ${label} ${runs}run expect ★${r}`, expectation(dist, r), runs * exp1[r], 1e-9)
+    }
+  }
+}
+
 // === 結果 ===
 let ok = 0
 let ng = 0
