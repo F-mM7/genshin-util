@@ -11,6 +11,8 @@ import {
   type TalentRarity,
 } from '../lib/materials'
 import { binomialPMF } from '../lib/probability'
+import { DOMAIN_RUNS, talentDomainDrops } from '../lib/domainDrops'
+import { isCertain, sufficiencyProbability } from '../lib/sufficiency'
 
 type Row = {
   id: string
@@ -34,6 +36,7 @@ const INITIAL: State = {
 }
 
 const RARITIES: TalentRarity[] = [4, 3, 2]
+const ASC_RARITIES: TalentRarity[] = [2, 3, 4]
 const STAR = (r: TalentRarity) => `★${r}`
 
 export default function Talent() {
@@ -96,38 +99,21 @@ export default function Talent() {
     }
   }, [state.owned, totals])
 
-  // トータル充足確率（厳密計算）
-  //   繰上1回のドロップ: 90% で +1個, 10% で +2個。
-  //   n 回ぶんの合計を G とすると、+2個になった回数 K ~ Binomial(n, 0.1) で G = n + K。
-  //   ★2 が不足なら 0。それ以外は K3 の各実現で
-  //     ★3 充足 (s3 ≥ 0) かつ ★4 充足 (owned[4] + n4 + K4 ≥ totals[4])
-  //   となる確率を K3 周辺化で合算する。
-  const probability = useMemo(() => {
-    const surplus2 = state.owned[2] - totals[2]
-    if (surplus2 < 0) return 0
-
-    const n3 = Math.max(0, Math.floor(surplus2 / 3))
-    const pmf3 = binomialPMF(n3, 0.1)
-
-    let total = 0
-    for (let k3 = 0; k3 <= n3; k3++) {
-      const s3 = state.owned[3] + n3 + k3 - totals[3]
-      if (s3 < 0) continue
-
-      const n4 = Math.max(0, Math.floor(s3 / 3))
-      const k4Need = Math.max(0, Math.ceil(totals[4] - state.owned[4] - n4))
-      if (k4Need > n4) continue
-
-      const pmf4 = binomialPMF(n4, 0.1)
-      let pSuf4 = 0
-      for (let k4 = k4Need; k4 <= n4; k4++) {
-        pSuf4 += pmf4[k4]
-      }
-      total += pmf3[k3] * pSuf4
-    }
-
-    return total
-  }, [state.owned, totals])
+  // 秘境IV を n 周した後の充足確率（n=0 は現在の所持数のみ）。
+  //   Σ_outcome p × 充足確率(所持 + ドロップ, 必要数) を共通 DP で計算する。
+  const probabilities = useMemo(
+    () =>
+      DOMAIN_RUNS.map((runs) => ({
+        runs,
+        probability: sufficiencyProbability(
+          ASC_RARITIES,
+          state.owned,
+          totals,
+          talentDomainDrops(runs),
+        ),
+      })),
+    [state.owned, totals],
+  )
 
   const updateRow = (id: string, patch: Partial<Row>) => {
     setState((s) => ({
@@ -337,13 +323,20 @@ export default function Talent() {
 
         <div className="card p-4 space-y-2">
           <h2 className="font-semibold">充足確率</h2>
-          <p
-            className={`text-3xl stat ${
-              probability >= 1 ? 'stat-pos' : 'text-slate-100'
-            }`}
-          >
-            {`${(probability * 100).toFixed(1)}%`}
-          </p>
+          <div className="grid grid-cols-4 gap-2">
+            {probabilities.map(({ runs, probability }) => (
+              <div key={runs} className="min-w-0">
+                <div className="text-xs text-slate-400">秘境 {runs}回</div>
+                <p
+                  className={`text-xl sm:text-3xl stat ${
+                    isCertain(probability) ? 'stat-pos' : 'text-slate-100'
+                  }`}
+                >
+                  {`${(probability * 100).toFixed(1)}%`}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
