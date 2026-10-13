@@ -2,7 +2,9 @@ import { Route, Routes } from 'react-router-dom'
 import Home from './pages/Home'
 import Resin from './pages/Resin'
 import Talent from './pages/Talent'
+import Talent2 from './pages/Talent2'
 import Weapon from './pages/Weapon'
+import Weapon2 from './pages/Weapon2'
 import Damage from './pages/Damage'
 import ArtifactExp from './pages/ArtifactExp'
 
@@ -13,7 +15,9 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/resin" element={<Resin />} />
         <Route path="/talent" element={<Talent />} />
+        <Route path="/talent2" element={<Talent2 />} />
         <Route path="/weapon" element={<Weapon />} />
+        <Route path="/weapon2" element={<Weapon2 />} />
         <Route path="/damage" element={<Damage />} />
         <Route path="/artifact-exp" element={<ArtifactExp />} />
         <Route
