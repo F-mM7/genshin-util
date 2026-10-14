@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { isCertain } from '../lib/sufficiency'
+import { isCertain, isImpossible } from '../lib/sufficiency'
 
 export type Marker =
   | 'circle'
@@ -260,14 +260,17 @@ export default function RunsLineChart({ series }: Props) {
 
         {plotted.flatMap((s) => s.points.map((pt) => {
           const certain = isCertain(pt.p)
-          const seriesColor = showLegend && !certain ? s.color : undefined
+          const impossible = isImpossible(pt.p)
+          const seriesColor = showLegend && !certain && !impossible ? s.color : undefined
           const colorClass = certain
             ? 'stat-pos'
-            : seriesColor
-              ? ''
-              : showLegend
-                ? 'text-sky-400'
-                : 'text-slate-100'
+            : impossible
+              ? 'stat-neg'
+              : seriesColor
+                ? ''
+                : showLegend
+                  ? 'text-sky-400'
+                  : 'text-slate-100'
           const common = {
             fontSize: labelFont,
             fill: 'currentColor',

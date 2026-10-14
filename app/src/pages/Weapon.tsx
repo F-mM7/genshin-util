@@ -13,7 +13,7 @@ import {
 } from '../lib/materials'
 import { binomialPMF } from '../lib/probability'
 import { DOMAIN_RUNS, weaponDomainDrops } from '../lib/domainDrops'
-import { isCertain, sufficiencyProbability } from '../lib/sufficiency'
+import { isCertain, isImpossible, sufficiencyProbability } from '../lib/sufficiency'
 
 type State = {
   quality: WeaponQuality
@@ -309,7 +309,11 @@ export default function Weapon() {
                 <div className="text-xs text-slate-400">秘境 {runs}回</div>
                 <p
                   className={`text-xl sm:text-3xl stat ${
-                    isCertain(probability) ? 'stat-pos' : 'text-slate-100'
+                    isCertain(probability)
+                      ? 'stat-pos'
+                      : isImpossible(probability)
+                        ? 'stat-neg'
+                        : 'text-slate-100'
                   }`}
                 >
                   {`${(probability * 100).toFixed(1)}%`}
