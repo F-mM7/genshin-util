@@ -94,9 +94,9 @@ const Y_TICKS = [0, 0.25, 0.5, 0.75, 1]
 const CHAR_EM = 0.6
 // 数値ラベルの最大文字数 ("100.0%")
 const LABEL_CHARS = 6
-const LABEL_FONT_MAX = 11
+const LABEL_FONT_MAX = 15
 const LABEL_FONT_MIN = 6
-const HORIZONTAL_FONT_MIN = 9
+const HORIZONTAL_FONT_MIN = 12
 const LABEL_GAP = 6
 
 const formatProbability = (p: number) => `${(p * 100).toFixed(1)}%`
@@ -259,18 +259,17 @@ export default function RunsLineChart({ series }: Props) {
         ))}
 
         {plotted.flatMap((s) => s.points.map((pt) => {
+          // 0% は灰、100% は白、それ以外は線と同じ色
           const certain = isCertain(pt.p)
           const impossible = isImpossible(pt.p)
-          const seriesColor = showLegend && !certain && !impossible ? s.color : undefined
+          const seriesColor = !certain && !impossible ? s.color : undefined
           const colorClass = certain
-            ? 'stat-pos'
+            ? 'text-white'
             : impossible
-              ? 'stat-neg'
+              ? 'text-slate-500'
               : seriesColor
                 ? ''
-                : showLegend
-                  ? 'text-sky-400'
-                  : 'text-slate-100'
+                : 'text-sky-400'
           const common = {
             fontSize: labelFont,
             fill: 'currentColor',
