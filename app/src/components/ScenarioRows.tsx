@@ -21,15 +21,15 @@ export default function ScenarioRows({
         <td rowSpan={2} className="font-medium align-top">
           {title}
         </td>
-        <td className="text-slate-400">繰上獲得</td>
+        <td className="text-neutral-400">繰上獲得</td>
         {rarities.map((r) => (
-          <td key={r} className="text-right stat text-slate-300">
+          <td key={r} className="text-right stat text-neutral-300">
             {fmt(gain[r], decimals)}
           </td>
         ))}
       </tr>
-      <tr className="border-b border-slate-800">
-        <td className="text-slate-400">最終余り</td>
+      <tr>
+        <td className="text-neutral-400">最終余り</td>
         {rarities.map((r) => (
           <td
             key={r}

@@ -84,13 +84,13 @@ export default function BuffPresetPicker({ onAdd }: Props) {
               onClick={() => onAdd(presetToCard(p))}
               title={p.remarks ?? ''}
             >
-              <div className="text-[10px] text-slate-400">
+              <div className="text-[10px] text-neutral-400">
                 {getCategoryLabel(p.category)}
                 {sub ? ` / ${sub}` : ''}
               </div>
               <div className="text-sm font-medium">{p.title}</div>
               {p.remarks ? (
-                <div className="text-xs text-slate-500 line-clamp-2 mt-0.5">
+                <div className="text-xs text-neutral-500 line-clamp-2 mt-0.5">
                   {p.remarks}
                 </div>
               ) : null}
@@ -98,7 +98,7 @@ export default function BuffPresetPicker({ onAdd }: Props) {
           )
         })}
         {filtered.length === 0 ? (
-          <div className="text-slate-500 text-sm col-span-full text-center py-4">
+          <div className="text-neutral-500 text-sm col-span-full text-center py-4">
             該当するプリセットがありません
           </div>
         ) : null}

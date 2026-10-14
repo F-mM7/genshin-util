@@ -39,7 +39,7 @@ export default function BuffCardForm({ card, onChange, onRemove }: Props) {
   }
 
   return (
-    <div className="border border-slate-800 rounded-lg p-3 space-y-2 bg-slate-900/50">
+    <div className="rounded-lg p-3 space-y-2 bg-white/[0.04]">
       <div className="flex items-center gap-2">
         <input
           className="input flex-1"
@@ -48,7 +48,7 @@ export default function BuffCardForm({ card, onChange, onRemove }: Props) {
           placeholder="バフ名"
         />
         <button
-          className="text-slate-500 hover:text-rose-400 text-sm px-2"
+          className="text-neutral-500 hover:text-rose-400 text-sm px-2"
           onClick={onRemove}
           aria-label="バフを削除"
         >
@@ -97,7 +97,7 @@ export default function BuffCardForm({ card, onChange, onRemove }: Props) {
                 <span>基礎値の%</span>
               </label>
               <button
-                className="text-slate-500 hover:text-rose-400 text-sm ml-auto"
+                className="text-neutral-500 hover:text-rose-400 text-sm ml-auto"
                 onClick={() => removeStat(i)}
                 aria-label="ステータス変化を削除"
               >

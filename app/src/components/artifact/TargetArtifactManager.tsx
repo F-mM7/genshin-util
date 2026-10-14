@@ -53,7 +53,7 @@ export default function TargetArtifactManager({
     <div className="space-y-3">
       <div className="flex items-baseline justify-between">
         <h2 className="font-semibold">目標聖遺物（★5）</h2>
-        <span className="text-xs text-slate-500">
+        <span className="text-xs text-neutral-500">
           {targetArtifacts.length} 件
         </span>
       </div>

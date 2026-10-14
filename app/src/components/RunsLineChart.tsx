@@ -206,7 +206,7 @@ export default function RunsLineChart({ series }: Props) {
               x2={width - PAD_RIGHT}
               y1={yOf(t)}
               y2={yOf(t)}
-              className="stroke-slate-800"
+              className="stroke-neutral-800"
               strokeWidth={1}
             />
             <text
@@ -215,7 +215,7 @@ export default function RunsLineChart({ series }: Props) {
               textAnchor="end"
               dominantBaseline="middle"
               fontSize={11}
-              className="fill-slate-400 stat"
+              className="fill-neutral-400 stat"
             >
               {`${t * 100}%`}
             </text>
@@ -230,7 +230,7 @@ export default function RunsLineChart({ series }: Props) {
             textAnchor="middle"
             dominantBaseline="hanging"
             fontSize={xTickFont}
-            className="fill-slate-400 stat"
+            className="fill-neutral-400 stat"
           >
             {i}
           </text>
@@ -266,14 +266,14 @@ export default function RunsLineChart({ series }: Props) {
           const colorClass = certain
             ? 'text-white'
             : impossible
-              ? 'text-slate-500'
+              ? 'text-neutral-500'
               : seriesColor
                 ? ''
                 : 'text-sky-400'
           const common = {
             fontSize: labelFont,
             fill: 'currentColor',
-            className: `stat ${colorClass} stroke-slate-900`,
+            className: `stat ${colorClass} stroke-neutral-900`,
             style: seriesColor ? { color: seriesColor } : undefined,
             strokeWidth: 3,
             strokeLinejoin: 'round' as const,

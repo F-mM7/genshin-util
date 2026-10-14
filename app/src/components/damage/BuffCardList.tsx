@@ -28,7 +28,7 @@ export default function BuffCardList({ buffs, onChange }: Props) {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h2 className="font-semibold">
-          バフ <span className="text-slate-500 text-sm">({buffs.length})</span>
+          バフ <span className="text-neutral-500 text-sm">({buffs.length})</span>
         </h2>
         <div className="flex gap-2">
           {buffs.length > 0 ? (
@@ -53,7 +53,7 @@ export default function BuffCardList({ buffs, onChange }: Props) {
         ))}
       </div>
 
-      <div className="border-t border-slate-800 pt-3">
+      <div className="pt-3">
         <h3 className="font-semibold text-sm mb-2">プリセットから追加</h3>
         <BuffPresetPicker onAdd={addFromPreset} />
       </div>

@@ -402,7 +402,7 @@ function Row({
   valueClass?: string
 }) {
   return (
-    <div className="flex justify-between border-b border-slate-800/60 py-1">
+    <div className="flex justify-between py-1">
       <dt className="label">{label}</dt>
       <dd className={`stat ${valueClass ?? ''}`}>{value}</dd>
     </div>

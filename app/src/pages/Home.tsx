@@ -19,7 +19,7 @@ export default function Home() {
 
       {grouped.map((g) => (
         <section key={g.category}>
-          <h2 className="text-lg font-semibold text-slate-300 mb-3">
+          <h2 className="text-lg font-semibold text-neutral-300 mb-3">
             {g.category}
           </h2>
           <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">

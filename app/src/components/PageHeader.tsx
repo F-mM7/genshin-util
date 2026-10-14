@@ -13,13 +13,13 @@ export default function PageHeader({ title, description, actions }: Props) {
       <div className="flex flex-col gap-1">
         <Link
           to="/"
-          className="text-xs text-slate-400 hover:text-slate-200 transition"
+          className="text-xs text-neutral-400 hover:text-neutral-200 transition"
         >
           ← トップに戻る
         </Link>
         <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
         {description ? (
-          <p className="text-sm text-slate-400">{description}</p>
+          <p className="text-sm text-neutral-400">{description}</p>
         ) : null}
       </div>
       {actions ? <div className="flex gap-2">{actions}</div> : null}

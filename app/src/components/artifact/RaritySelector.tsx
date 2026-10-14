@@ -18,7 +18,7 @@ export default function RaritySelector({ value, onChange }: Props) {
             type="button"
             className={`btn ${
               value === r
-                ? 'bg-sky-900/40 border-sky-600 text-sky-100'
+                ? 'bg-sky-900/40 text-sky-100'
                 : ''
             }`}
             onClick={() => onChange(r)}

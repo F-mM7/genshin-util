@@ -23,7 +23,7 @@ export default function App() {
         <Route
           path="*"
           element={
-            <div className="text-center text-slate-400 py-20">
+            <div className="text-center text-neutral-400 py-20">
               ページが見つかりません
             </div>
           }

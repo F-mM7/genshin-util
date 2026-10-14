@@ -217,7 +217,7 @@ export default function Weapon() {
               </thead>
               <tbody>
                 <tr className="font-semibold">
-                  <td className="text-slate-400">必要</td>
+                  <td className="text-neutral-400">必要</td>
                   {RARITIES.map((r) => (
                     <td key={r} className="text-right stat">
                       {fmt(totals[r])}
@@ -225,14 +225,14 @@ export default function Weapon() {
                   ))}
                 </tr>
                 <tr>
-                  <td className="text-slate-400">所持</td>
+                  <td className="text-neutral-400">所持</td>
                   {RARITIES.map((r) => (
                     <td key={r}>
                       <div className="flex items-center gap-1">
                         <button
                           type="button"
                           tabIndex={-1}
-                          className="w-6 h-6 shrink-0 flex items-center justify-center rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs"
+                          className="w-6 h-6 shrink-0 flex items-center justify-center rounded bg-white/[0.04] hover:bg-white/[0.08] text-neutral-300 text-xs"
                           onClick={() => setOwned(r, state.owned[r] - 1)}
                           aria-label={`${STAR(r)}を減らす`}
                         >
@@ -246,7 +246,7 @@ export default function Weapon() {
                         <button
                           type="button"
                           tabIndex={-1}
-                          className="w-6 h-6 shrink-0 flex items-center justify-center rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs"
+                          className="w-6 h-6 shrink-0 flex items-center justify-center rounded bg-white/[0.04] hover:bg-white/[0.08] text-neutral-300 text-xs"
                           onClick={() => setOwned(r, state.owned[r] + 1)}
                           aria-label={`${STAR(r)}を増やす`}
                         >
@@ -306,14 +306,14 @@ export default function Weapon() {
           <div className="grid grid-cols-4 gap-2">
             {probabilities.map(({ runs, probability }) => (
               <div key={runs} className="min-w-0">
-                <div className="text-xs text-slate-400">秘境 {runs}回</div>
+                <div className="text-xs text-neutral-400">秘境 {runs}回</div>
                 <p
                   className={`text-xl sm:text-3xl stat ${
                     isCertain(probability)
                       ? 'stat-pos'
                       : isImpossible(probability)
                         ? 'stat-neg'
-                        : 'text-slate-100'
+                        : 'text-neutral-100'
                   }`}
                 >
                   {`${(probability * 100).toFixed(1)}%`}

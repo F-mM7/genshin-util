@@ -59,7 +59,7 @@ const canSynth = (s: State, r: WeaponMatRarity) => {
 }
 
 const SMALL_BTN =
-  'h-6 shrink-0 flex items-center justify-center rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-slate-800'
+  'h-6 shrink-0 flex items-center justify-center rounded bg-white/[0.04] hover:bg-white/[0.08] text-neutral-300 text-xs disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white/[0.04]'
 
 // 目標突破数ごとに固定の系列スタイル。色相を 60° 間隔で色相環順に並べ、
 // 暗い背景で読めるよう色相ごとに彩度・明度を調整している
@@ -191,7 +191,7 @@ export default function Weapon2() {
               />
               <button
                 type="button"
-                className="btn shrink-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-slate-800"
+                className="btn shrink-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white/[0.04]"
                 onClick={enhance}
                 disabled={!canEnhance(state)}
               >
@@ -226,14 +226,14 @@ export default function Weapon2() {
               </thead>
               <tbody>
                 <tr>
-                  <td className="text-slate-400">所持</td>
+                  <td className="text-neutral-400">所持</td>
                   {RARITIES.map((r) => (
                     <td key={r}>
                       <div className="flex items-center gap-1">
                         <button
                           type="button"
                           tabIndex={-1}
-                          className="w-6 h-6 shrink-0 flex items-center justify-center rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs"
+                          className="w-6 h-6 shrink-0 flex items-center justify-center rounded bg-white/[0.04] hover:bg-white/[0.08] text-neutral-300 text-xs"
                           onClick={() => setOwned(r, state.owned[r] - 1)}
                           aria-label={`${STAR(r)}を減らす`}
                         >
@@ -247,7 +247,7 @@ export default function Weapon2() {
                         <button
                           type="button"
                           tabIndex={-1}
-                          className="w-6 h-6 shrink-0 flex items-center justify-center rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs"
+                          className="w-6 h-6 shrink-0 flex items-center justify-center rounded bg-white/[0.04] hover:bg-white/[0.08] text-neutral-300 text-xs"
                           onClick={() => setOwned(r, state.owned[r] + 1)}
                           aria-label={`${STAR(r)}を増やす`}
                         >

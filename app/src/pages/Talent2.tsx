@@ -164,14 +164,14 @@ export default function Talent2() {
                       {RARITIES.map((r) => (
                         <td
                           key={r}
-                          className="text-right stat text-slate-300"
+                          className="text-right stat text-neutral-300"
                         >
                           {fmt(cost[r])}
                         </td>
                       ))}
                       <td className="text-right">
                         <button
-                          className="text-slate-500 hover:text-rose-400 text-sm"
+                          className="text-neutral-500 hover:text-rose-400 text-sm"
                           onClick={() => removeRow(row.id)}
                           aria-label="削除"
                         >
@@ -193,7 +193,7 @@ export default function Talent2() {
                   <td></td>
                 </tr>
                 <tr>
-                  <td colSpan={3} className="text-right text-slate-400">
+                  <td colSpan={3} className="text-right text-neutral-400">
                     所持
                   </td>
                   {RARITIES.map((r) => (
@@ -202,7 +202,7 @@ export default function Talent2() {
                         <button
                           type="button"
                           tabIndex={-1}
-                          className="w-6 h-6 shrink-0 flex items-center justify-center rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs"
+                          className="w-6 h-6 shrink-0 flex items-center justify-center rounded bg-white/[0.04] hover:bg-white/[0.08] text-neutral-300 text-xs"
                           onClick={() => setOwned(r, state.owned[r] - 1)}
                           aria-label={`${STAR(r)}を減らす`}
                         >
@@ -216,7 +216,7 @@ export default function Talent2() {
                         <button
                           type="button"
                           tabIndex={-1}
-                          className="w-6 h-6 shrink-0 flex items-center justify-center rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs"
+                          className="w-6 h-6 shrink-0 flex items-center justify-center rounded bg-white/[0.04] hover:bg-white/[0.08] text-neutral-300 text-xs"
                           onClick={() => setOwned(r, state.owned[r] + 1)}
                           aria-label={`${STAR(r)}を増やす`}
                         >
@@ -234,7 +234,7 @@ export default function Talent2() {
 
         <div className="card p-4">
           <label className="flex items-center gap-2">
-            <span className="text-sm text-slate-400">周回数上限</span>
+            <span className="text-sm text-neutral-400">周回数上限</span>
             <NumberInput
               value={state.maxRuns}
               min={1}

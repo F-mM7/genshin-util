@@ -70,7 +70,7 @@ export default function MaterialCalculator({
                   disabled={disabled}
                   className={`btn ${
                     active
-                      ? 'bg-sky-900/40 border-sky-600 text-sky-100'
+                      ? 'bg-sky-900/40 text-sky-100'
                       : disabled
                         ? 'opacity-40 cursor-not-allowed'
                         : ''
@@ -92,7 +92,7 @@ export default function MaterialCalculator({
                 type="button"
                 className={`btn ${
                   capDivisor === d
-                    ? 'bg-sky-900/40 border-sky-600 text-sky-100'
+                    ? 'bg-sky-900/40 text-sky-100'
                     : ''
                 }`}
                 onClick={() => onCapDivisorChange(d)}
@@ -105,11 +105,11 @@ export default function MaterialCalculator({
       </div>
 
       <div className="grid grid-cols-2 gap-2 text-sm">
-        <div className="bg-slate-900/60 border border-slate-800 rounded p-2">
+        <div className="bg-white/[0.04] rounded p-2">
           <div className="label text-xs">必要 Exp</div>
           <div className="stat">{fmt(expReq)}</div>
         </div>
-        <div className="bg-slate-900/60 border border-slate-800 rounded p-2">
+        <div className="bg-white/[0.04] rounded p-2">
           <div className="label text-xs">投入上限 Exp</div>
           <div className="stat">{fmt(expCap, 1)}</div>
         </div>
@@ -130,7 +130,7 @@ export default function MaterialCalculator({
                 <th
                   key={i}
                   className={`text-right whitespace-nowrap ${
-                    i === 0 ? '' : 'text-slate-500'
+                    i === 0 ? '' : 'text-neutral-500'
                   }`}
                 >
                   <div className="text-xs">
@@ -153,7 +153,7 @@ export default function MaterialCalculator({
                       type="button"
                       className={`btn w-full justify-center text-xs ${
                         active
-                          ? 'bg-sky-900/40 border-sky-600 text-sky-100'
+                          ? 'bg-sky-900/40 text-sky-100'
                           : 'opacity-60'
                       }`}
                       onClick={() => onMaterialToggle(m)}
@@ -165,14 +165,14 @@ export default function MaterialCalculator({
                     {materialUsage[m] || ''}
                   </td>
                   {futureMaterialUsages.map((u, i) => (
-                    <td key={i} className="text-right stat text-slate-500">
+                    <td key={i} className="text-right stat text-neutral-500">
                       {u[m] || ''}
                     </td>
                   ))}
                 </tr>
               )
             })}
-            <tr className="border-t border-slate-700">
+            <tr>
               <td className="label text-xs text-center">投入exp</td>
               <td className="text-right stat">
                 {givenExp ? fmt(givenExp) : ''}
@@ -180,7 +180,7 @@ export default function MaterialCalculator({
               {futureMaterialUsages.map((u, i) => {
                 const e = stepExp(u)
                 return (
-                  <td key={i} className="text-right stat text-slate-500">
+                  <td key={i} className="text-right stat text-neutral-500">
                     {e ? fmt(e) : ''}
                   </td>
                 )

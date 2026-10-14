@@ -21,7 +21,7 @@ export default function SubstatSelector({ selected, onChange }: Props) {
     <div className="space-y-2">
       <div className="flex items-baseline justify-between">
         <h2 className="font-semibold">サブステータス</h2>
-        <span className="text-xs text-slate-500">
+        <span className="text-xs text-neutral-500">
           選択中 {selected.length} / {MAX_SUBSTATS}
         </span>
       </div>
@@ -36,7 +36,7 @@ export default function SubstatSelector({ selected, onChange }: Props) {
               disabled={disabled}
               className={`btn ${
                 active
-                  ? 'bg-sky-900/40 border-sky-600 text-sky-100'
+                  ? 'bg-sky-900/40 text-sky-100'
                   : disabled
                     ? 'opacity-40 cursor-not-allowed'
                     : ''

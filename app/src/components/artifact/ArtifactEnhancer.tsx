@@ -115,7 +115,7 @@ export default function ArtifactEnhancer({
                 >
                   ＋
                 </button>
-                <span className="text-xs text-slate-500">
+                <span className="text-xs text-neutral-500">
                   / {display(max)}
                 </span>
               </div>

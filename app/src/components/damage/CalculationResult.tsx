@@ -43,7 +43,7 @@ export default function CalculationResult({
   return (
     <div className="space-y-4">
       <div className="card p-4 space-y-1">
-        <div className="text-sm text-slate-400">
+        <div className="text-sm text-neutral-400">
           評価値 ({STAT_TYPE_LABEL[statType]} 基準)
         </div>
         <div className="text-3xl stat">{fmt(result.evaluationValue, 1)}</div>
@@ -78,7 +78,7 @@ export default function CalculationResult({
             <tbody>
               {axes.map((row, i) => (
                 <tr key={row}>
-                  <td className="text-slate-400">{STAT_AXIS_LABEL[row]}</td>
+                  <td className="text-neutral-400">{STAT_AXIS_LABEL[row]}</td>
                   {axes.map((col, j) => (
                     <MatrixCell
                       key={col}
@@ -123,7 +123,7 @@ export default function CalculationResult({
                 <tr>
                   <td
                     colSpan={3}
-                    className="text-center text-slate-500 text-xs py-2"
+                    className="text-center text-neutral-500 text-xs py-2"
                   >
                     対応する杯トレードオフがありません
                   </td>
@@ -164,10 +164,10 @@ function MatrixCell({
   sameAxis: boolean
 }) {
   if (sameAxis) {
-    return <td className="text-center text-slate-700">—</td>
+    return <td className="text-center text-neutral-700">—</td>
   }
   if (!cell) {
-    return <td className="text-center text-slate-700">-</td>
+    return <td className="text-center text-neutral-700">-</td>
   }
   return (
     <td
