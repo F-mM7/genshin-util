@@ -21,20 +21,8 @@ export const ROUTES: RouteDef[] = [
     icon: '📘',
   },
   {
-    path: '/talent2',
-    title: '天賦素材2.0',
-    category: '素材',
-    icon: '📘',
-  },
-  {
     path: '/weapon',
     title: '武器突破素材',
-    category: '素材',
-    icon: '⚔️',
-  },
-  {
-    path: '/weapon2',
-    title: '武器突破素材2.0',
     category: '素材',
     icon: '⚔️',
   },

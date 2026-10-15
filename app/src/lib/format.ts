@@ -5,10 +5,3 @@ export function fmt(value: number, digits = 0): string {
     maximumFractionDigits: digits,
   })
 }
-
-export function signClass(value: number): string {
-  if (!Number.isFinite(value)) return ''
-  if (value > 0) return 'stat-pos'
-  if (value < 0) return 'stat-neg'
-  return ''
-}

@@ -1,130 +1,96 @@
 import { useMemo } from 'react'
 import PageHeader from '../components/PageHeader'
 import NumberInput from '../components/NumberInput'
-import ScenarioRows from '../components/ScenarioRows'
+import RunsLineChart, {
+  type Marker,
+  type RunsSeries,
+} from '../components/RunsLineChart'
 import { useLocalStorage } from '../lib/useLocalStorage'
-import { fmt } from '../lib/format'
 import {
+  WEAPON_BREAK_COSTS,
   WEAPON_BREAK_MAX,
   WEAPON_BREAK_MIN,
   weaponBreakCost,
   type WeaponMatRarity,
   type WeaponQuality,
 } from '../lib/materials'
-import { binomialPMF } from '../lib/probability'
-import { DOMAIN_RUNS, weaponDomainDrops } from '../lib/domainDrops'
-import { isCertain, isImpossible, sufficiencyProbability } from '../lib/sufficiency'
+import {
+  MAX_RUNS_LIMIT,
+  weaponSufficiencyByRuns,
+} from '../lib/sufficiencyByRuns'
 
 type State = {
   quality: WeaponQuality
   from: number
-  to: number
   owned: Record<WeaponMatRarity, number>
+  maxRuns: number
 }
 
 const INITIAL: State = {
   quality: 5,
   from: 0,
-  to: 6,
   owned: { 2: 0, 3: 0, 4: 0, 5: 0 },
+  maxRuns: 10,
 }
 
+const MAX_RUNS_MIN = 1
+
 const RARITIES: WeaponMatRarity[] = [5, 4, 3, 2]
-const ASC_RARITIES: WeaponMatRarity[] = [2, 3, 4, 5]
 const STAR = (r: WeaponMatRarity) => `★${r}`
 const QUALITIES: WeaponQuality[] = [3, 4, 5]
+// 合成元として1つ下のレアリティを消費する個数
+const SYNTH_COST = 3
+const SYNTH_AMOUNTS = [1, 2]
+
+const lowerRarity = (r: WeaponMatRarity): WeaponMatRarity | null =>
+  r > 2 ? ((r - 1) as WeaponMatRarity) : null
+
+const nextBreakCost = (s: State) =>
+  s.from < WEAPON_BREAK_MAX ? WEAPON_BREAK_COSTS[s.quality][s.from + 1] : null
+
+const canEnhance = (s: State) => {
+  const c = nextBreakCost(s)
+  return c != null && s.owned[c.rarity] >= c.count
+}
+
+const canSynth = (s: State, r: WeaponMatRarity) => {
+  const lo = lowerRarity(r)
+  return lo != null && s.owned[lo] >= SYNTH_COST
+}
+
+const SMALL_BTN =
+  'h-6 shrink-0 flex items-center justify-center rounded bg-white/[0.04] hover:bg-white/[0.08] text-neutral-300 text-xs disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white/[0.04]'
+
+// 目標突破数ごとに固定の系列スタイル。色相を 60° 間隔で色相環順に並べ、
+// 暗い背景で読めるよう色相ごとに彩度・明度を調整している
+const TARGET_STYLES: Record<number, { color: string; marker: Marker }> = {
+  1: { color: 'hsl(0 85% 65%)', marker: 'circle' },
+  2: { color: 'hsl(60 80% 55%)', marker: 'square' },
+  3: { color: 'hsl(120 65% 55%)', marker: 'triangle' },
+  4: { color: 'hsl(180 70% 50%)', marker: 'diamond' },
+  5: { color: 'hsl(240 90% 74%)', marker: 'triangleDown' },
+  6: { color: 'hsl(300 80% 70%)', marker: 'cross' },
+}
 
 export default function Weapon() {
-  const [state, setState, reset] = useLocalStorage<State>('weapon-v2', INITIAL)
-
-  const totals = useMemo(
-    () => weaponBreakCost(state.quality, state.from, state.to),
-    [state.quality, state.from, state.to]
+  const [state, setState, reset] = useLocalStorage<State>(
+    'weapon2-v2',
+    INITIAL
   )
 
-  // 繰上シナリオの計算（Talent と同形式、レアリティを ★2〜★5 に拡張）:
-  //   - 「最低（×1）」: ★N余り÷3 ×1 を ★(N+1) へ流す（連鎖、floor）
-  //   - 「最高（×2）」: ★N余り÷3 ×2 を ★(N+1) へ流す（連鎖、floor）
-  //   - 「期待値」: 充足確率と同じ分布（K~Bin(n,0.1)）に基づく厳密な期待値。
-  //       ★3 獲得 = n3 * 1.1
-  //       ★4 獲得 = 1.1 * Σ_{k3} pmf3[k3] * n4(k3)
-  //       ★5 獲得 = 1.1 * Σ_{k3,k4} pmf3[k3] * pmf4(n4(k3))[k4] * n5(k3,k4)
-  const carry = useMemo(() => {
-    const chainInt = (factor: number) => {
-      const gain: Record<WeaponMatRarity, number> = { 2: 0, 3: 0, 4: 0, 5: 0 }
-      const surplus: Record<WeaponMatRarity, number> = {
-        2: 0,
-        3: 0,
-        4: 0,
-        5: 0,
-      }
-      surplus[2] = state.owned[2] - totals[2]
-      gain[3] = Math.max(0, Math.floor(surplus[2] / 3)) * factor
-      surplus[3] = state.owned[3] + gain[3] - totals[3]
-      gain[4] = Math.max(0, Math.floor(surplus[3] / 3)) * factor
-      surplus[4] = state.owned[4] + gain[4] - totals[4]
-      gain[5] = Math.max(0, Math.floor(surplus[4] / 3)) * factor
-      surplus[5] = state.owned[5] + gain[5] - totals[5]
-      return { gain, surplus }
+  const series = useMemo(() => {
+    const result: RunsSeries[] = []
+    for (let t = state.from + 1; t <= WEAPON_BREAK_MAX; t++) {
+      const totals = weaponBreakCost(state.quality, state.from, t)
+      result.push({
+        label: `突破${t}`,
+        values: weaponSufficiencyByRuns(state.owned, totals, state.maxRuns),
+        color: TARGET_STYLES[t].color,
+        marker: TARGET_STYLES[t].marker,
+      })
     }
-
-    const surplus2 = state.owned[2] - totals[2]
-    const n3 = Math.max(0, Math.floor(surplus2 / 3))
-    const pmf3 = binomialPMF(n3, 0.1)
-
-    let expN4 = 0
-    let expN5 = 0
-    for (let k3 = 0; k3 <= n3; k3++) {
-      const s3 = state.owned[3] + n3 + k3 - totals[3]
-      const n4 = Math.max(0, Math.floor(s3 / 3))
-      expN4 += pmf3[k3] * n4
-
-      const pmf4 = binomialPMF(n4, 0.1)
-      for (let k4 = 0; k4 <= n4; k4++) {
-        const s4 = state.owned[4] + n4 + k4 - totals[4]
-        const n5 = Math.max(0, Math.floor(s4 / 3))
-        expN5 += pmf3[k3] * pmf4[k4] * n5
-      }
-    }
-    const expGain3 = n3 * 1.1
-    const expGain4 = expN4 * 1.1
-    const expGain5 = expN5 * 1.1
-
-    const gainExp: Record<WeaponMatRarity, number> = {
-      2: 0,
-      3: expGain3,
-      4: expGain4,
-      5: expGain5,
-    }
-    const expectSurplus: Record<WeaponMatRarity, number> = {
-      2: surplus2,
-      3: state.owned[3] + expGain3 - totals[3],
-      4: state.owned[4] + expGain4 - totals[4],
-      5: state.owned[5] + expGain5 - totals[5],
-    }
-
-    return {
-      boss: chainInt(2),
-      normal: chainInt(1),
-      expect: { gain: gainExp, surplus: expectSurplus },
-    }
-  }, [state.owned, totals])
-
-  // 秘境IV を n 周した後の充足確率（n=0 は現在の所持数のみ）。
-  //   Σ_outcome p × 充足確率(所持 + ドロップ, 必要数) を共通 DP で計算する。
-  const probabilities = useMemo(
-    () =>
-      DOMAIN_RUNS.map((runs) => ({
-        runs,
-        probability: sufficiencyProbability(
-          ASC_RARITIES,
-          state.owned,
-          totals,
-          weaponDomainDrops(runs)
-        ),
-      })),
-    [state.owned, totals]
-  )
+    return result
+  }, [state.quality, state.from, state.owned, state.maxRuns])
 
   const setOwned = (r: WeaponMatRarity, v: number) => {
     setState((s) => ({
@@ -133,12 +99,47 @@ export default function Weapon() {
     }))
   }
 
-  const setBreak = (key: 'from' | 'to', v: number) => {
+  const setFrom = (v: number) => {
     const clamped = Math.max(
       WEAPON_BREAK_MIN,
       Math.min(WEAPON_BREAK_MAX, Math.floor(v))
     )
-    setState((s) => ({ ...s, [key]: clamped }))
+    setState((s) => ({ ...s, from: clamped }))
+  }
+
+  const enhance = () => {
+    setState((s) => {
+      const c = nextBreakCost(s)
+      if (c == null || !canEnhance(s)) return s
+      return {
+        ...s,
+        from: s.from + 1,
+        owned: { ...s.owned, [c.rarity]: s.owned[c.rarity] - c.count },
+      }
+    })
+  }
+
+  const synth = (r: WeaponMatRarity, n: number) => {
+    setState((s) => {
+      const lo = lowerRarity(r)
+      if (lo == null || !canSynth(s, r)) return s
+      return {
+        ...s,
+        owned: {
+          ...s.owned,
+          [r]: s.owned[r] + n,
+          [lo]: s.owned[lo] - SYNTH_COST,
+        },
+      }
+    })
+  }
+
+  const setMaxRuns = (v: number) => {
+    const clamped = Math.max(
+      MAX_RUNS_MIN,
+      Math.min(MAX_RUNS_LIMIT, Math.floor(v))
+    )
+    setState((s) => ({ ...s, maxRuns: clamped }))
   }
 
   return (
@@ -154,7 +155,7 @@ export default function Weapon() {
 
       <div className="grid gap-4">
         <div className="card p-4 space-y-4">
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div className="flex items-center gap-3">
               <label className="label w-20 shrink-0" htmlFor="quality">
                 クオリティ
@@ -186,19 +187,27 @@ export default function Weapon() {
                 value={state.from}
                 min={WEAPON_BREAK_MIN}
                 max={WEAPON_BREAK_MAX}
-                onChange={(v) => setBreak('from', v)}
+                onChange={setFrom}
               />
+              <button
+                type="button"
+                className="btn shrink-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white/[0.04]"
+                onClick={enhance}
+                disabled={!canEnhance(state)}
+              >
+                強化
+              </button>
             </div>
             <div className="flex items-center gap-3">
-              <label className="label w-20 shrink-0" htmlFor="to">
-                目標突破
+              <label className="label w-20 shrink-0" htmlFor="maxRuns">
+                周回数上限
               </label>
               <NumberInput
-                id="to"
-                value={state.to}
-                min={WEAPON_BREAK_MIN}
-                max={WEAPON_BREAK_MAX}
-                onChange={(v) => setBreak('to', v)}
+                id="maxRuns"
+                value={state.maxRuns}
+                min={MAX_RUNS_MIN}
+                max={MAX_RUNS_LIMIT}
+                onChange={setMaxRuns}
               />
             </div>
           </div>
@@ -216,14 +225,6 @@ export default function Weapon() {
                 </tr>
               </thead>
               <tbody>
-                <tr className="font-semibold">
-                  <td className="text-neutral-400">必要</td>
-                  {RARITIES.map((r) => (
-                    <td key={r} className="text-right stat">
-                      {fmt(totals[r])}
-                    </td>
-                  ))}
-                </tr>
                 <tr>
                   <td className="text-neutral-400">所持</td>
                   {RARITIES.map((r) => (
@@ -252,6 +253,19 @@ export default function Weapon() {
                         >
                           ＋
                         </button>
+                        {lowerRarity(r) != null &&
+                          SYNTH_AMOUNTS.map((n) => (
+                            <button
+                              key={n}
+                              type="button"
+                              tabIndex={-1}
+                              className={`${SMALL_BTN} px-1.5`}
+                              onClick={() => synth(r, n)}
+                              disabled={!canSynth(state, r)}
+                            >
+                              x{n}
+                            </button>
+                          ))}
                       </div>
                     </td>
                   ))}
@@ -261,67 +275,11 @@ export default function Weapon() {
           </div>
         </div>
 
-        <div className="card p-4 space-y-3">
-          <h2 className="font-semibold">結果</h2>
-          <div className="overflow-x-auto">
-            <table className="table-mini">
-              <thead>
-                <tr>
-                  <th>シナリオ</th>
-                  <th></th>
-                  {RARITIES.map((r) => (
-                    <th key={r} className="text-right">
-                      {STAR(r)}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                <ScenarioRows
-                  rarities={RARITIES}
-                  title="最低（×1）"
-                  gain={carry.normal.gain}
-                  surplus={carry.normal.surplus}
-                />
-                <ScenarioRows
-                  rarities={RARITIES}
-                  title="最高（×2）"
-                  gain={carry.boss.gain}
-                  surplus={carry.boss.surplus}
-                />
-                <ScenarioRows
-                  rarities={RARITIES}
-                  title="期待値"
-                  gain={carry.expect.gain}
-                  surplus={carry.expect.surplus}
-                  decimals={1}
-                />
-              </tbody>
-            </table>
+        {series.length > 0 && (
+          <div className="card p-4">
+            <RunsLineChart series={series} />
           </div>
-        </div>
-
-        <div className="card p-4 space-y-2">
-          <h2 className="font-semibold">充足確率</h2>
-          <div className="grid grid-cols-4 gap-2">
-            {probabilities.map(({ runs, probability }) => (
-              <div key={runs} className="min-w-0">
-                <div className="text-xs text-neutral-400">秘境 {runs}回</div>
-                <p
-                  className={`text-xl sm:text-3xl stat ${
-                    isCertain(probability)
-                      ? 'stat-pos'
-                      : isImpossible(probability)
-                        ? 'stat-neg'
-                        : 'text-neutral-100'
-                  }`}
-                >
-                  {`${(probability * 100).toFixed(1)}%`}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
+        )}
       </div>
     </div>
   )

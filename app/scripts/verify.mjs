@@ -218,7 +218,7 @@ check('weapon ★5 0->1', weaponBreakCost(5, 0, 1), { 2: 5, 3: 0, 4: 0, 5: 0 })
 check('weapon ★5 5->6', weaponBreakCost(5, 5, 6), { 2: 0, 3: 0, 4: 0, 5: 6 })
 check('weapon ★4 2->4', weaponBreakCost(4, 2, 4), { 2: 0, 3: 6, 4: 3, 5: 0 })
 
-// === 秘境IVドロップ (domainDrops.ts) ===
+// === 秘境IVドロップ (sufficiencyByRuns.ts のモデル) ===
 // docs/domain-drop-rates.md の推定モデル。1周の同時分布を求め、runs 回畳み込む
 //   天賦IV: 固定★2 2個80%/3個20% + 枠 2枠80%/3枠20%、各枠 ★3 90% / ★4 10%
 //   武器IV: 固定★2 2個80%/3個20% + 枠 2枠10%/3枠70%/4枠20%、各枠 ★3 78% / ★4 20% / ★5 2%

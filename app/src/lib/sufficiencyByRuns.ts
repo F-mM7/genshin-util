@@ -2,15 +2,14 @@ import { binomialPMF } from './probability'
 import type { TalentRarity, WeaponMatRarity } from './materials'
 
 // 秘境IVを 0〜maxRuns 周したときの全レアリティ同時充足確率を、周回数ごとに返す。
-// 結果は sufficiencyProbability(昇順レアリティ, owned, totals, xxxDomainDrops(n)) と同じ値だが、
 // n 周の同時ドロップ分布を全展開せずに計算する。
 //
-// モデル(domainDrops.ts と同値): 1周 = 最下位レアリティの固定ドロップ + 追加枠。各枠は独立に上位レアリティの
+// モデル: 1周 = 最下位レアリティの固定ドロップ + 追加枠。各枠は独立に上位レアリティの
 // いずれか1個。周回同士は独立。よって n 周では
 //   B = 固定ドロップ総数, S = 追加枠総数 (B と S は独立)
 //   S が決まれば上位レアリティの個数は多項分布 = 低い方から順に条件付き二項分布:
 //     D_j ~ Bin(残り枠 R, p_j / Σ_{k≥j} p_k), 残り枠 R ← R - D_j
-// 合成モデル(sufficiency.ts と同値): 段の余り s = 所持 + ドロップ + 下位からの繰上獲得 - 必要。s < 0 なら不成立。
+// 合成モデル: 段の余り s = 所持 + ドロップ + 下位からの繰上獲得 - 必要。s < 0 なら不成立。
 //   上位への獲得 = n + K (n = floor(s/3), K ~ Bin(n, 0.1))。最上位は s >= 0 で成立。
 // 最下位から1段ずつ、状態 (余り s, 残り枠 R) → (繰上獲得 c, 残り枠 R) の DP で進める。
 // 最悪(以降のドロップ0・全段 K=0)でも成立なら確率1、最良(以降の各段に残り枠すべて・全段 K=n)でも
@@ -25,21 +24,18 @@ type Model = {
   slotProbs: readonly number[]
 }
 
-// domainDrops.ts の TALENT_MODEL と同値
 const TALENT_MODEL: Model = {
   baseCounts: [[2, 0.8], [3, 0.2]],
   slotCounts: [[2, 0.8], [3, 0.2]],
   slotProbs: [0.9, 0.1],
 }
 
-// domainDrops.ts の WEAPON_MODEL と同値
 const WEAPON_MODEL: Model = {
   baseCounts: [[2, 0.8], [3, 0.2]],
   slotCounts: [[2, 0.1], [3, 0.7], [4, 0.2]],
   slotProbs: [0.78, 0.2, 0.02],
 }
 
-// sufficiency.ts の BONUS_P と同値
 const BONUS_P = 0.1
 
 /** 周回数上限入力の最大値 */

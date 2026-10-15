@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import PageHeader from '../components/PageHeader'
 import NumberInput from '../components/NumberInput'
-import ScenarioRows from '../components/ScenarioRows'
+import RunsLineChart from '../components/RunsLineChart'
 import { useLocalStorage } from '../lib/useLocalStorage'
 import { fmt } from '../lib/format'
 import {
@@ -10,9 +10,10 @@ import {
   talentCost,
   type TalentRarity,
 } from '../lib/materials'
-import { binomialPMF } from '../lib/probability'
-import { DOMAIN_RUNS, talentDomainDrops } from '../lib/domainDrops'
-import { isCertain, isImpossible, sufficiencyProbability } from '../lib/sufficiency'
+import {
+  MAX_RUNS_LIMIT,
+  talentSufficiencyByRuns,
+} from '../lib/sufficiencyByRuns'
 
 type Row = {
   id: string
@@ -24,6 +25,7 @@ type Row = {
 type State = {
   rows: Row[]
   owned: Record<TalentRarity, number>
+  maxRuns: number
 }
 
 const INITIAL: State = {
@@ -33,14 +35,17 @@ const INITIAL: State = {
     { id: 'c', from: 1, to: 1, count: 0 },
   ],
   owned: { 2: 14, 3: 33, 4: 22 },
+  maxRuns: 10,
 }
 
 const RARITIES: TalentRarity[] = [4, 3, 2]
-const ASC_RARITIES: TalentRarity[] = [2, 3, 4]
 const STAR = (r: TalentRarity) => `★${r}`
 
+const clampRuns = (v: number) =>
+  Math.min(MAX_RUNS_LIMIT, Math.max(1, Math.floor(v)))
+
 export default function Talent() {
-  const [state, setState, reset] = useLocalStorage<State>('talent-v3', INITIAL)
+  const [state, setState, reset] = useLocalStorage<State>('talent2-v1', INITIAL)
 
   const totals = useMemo(() => {
     const acc: Record<TalentRarity, number> = { 2: 0, 3: 0, 4: 0 }
@@ -51,68 +56,10 @@ export default function Talent() {
     return acc
   }, [state.rows])
 
-  // 繰上シナリオの計算:
-  //   - 「最低（×1）」: ★N余り÷3 ×1 を ★(N+1) へ流す（連鎖、floor）
-  //   - 「最高（×2）」: ★N余り÷3 ×2 を ★(N+1) へ流す（連鎖、floor）
-  //   - 「期待値」: 充足確率と同じ分布（K~Bin(n,0.1)）に基づく厳密な期待値。
-  //       ★3 繰上獲得 = n3 * 1.1
-  //       ★4 繰上獲得 = 1.1 * Σ_{k3} pmf3[k3] * n4(k3)
-  const carry = useMemo(() => {
-    const chainInt = (factor: number) => {
-      const gain: Record<TalentRarity, number> = { 2: 0, 3: 0, 4: 0 }
-      const surplus: Record<TalentRarity, number> = { 2: 0, 3: 0, 4: 0 }
-      surplus[2] = state.owned[2] - totals[2]
-      gain[3] = Math.max(0, Math.floor(surplus[2] / 3)) * factor
-      surplus[3] = state.owned[3] + gain[3] - totals[3]
-      gain[4] = Math.max(0, Math.floor(surplus[3] / 3)) * factor
-      surplus[4] = state.owned[4] + gain[4] - totals[4]
-      return { gain, surplus }
-    }
-
-    const surplus2 = state.owned[2] - totals[2]
-    const n3 = Math.max(0, Math.floor(surplus2 / 3))
-    const expGain3 = n3 * 1.1
-    const pmf3 = binomialPMF(n3, 0.1)
-    let expN4 = 0
-    for (let k3 = 0; k3 <= n3; k3++) {
-      const s3 = state.owned[3] + n3 + k3 - totals[3]
-      const n4 = Math.max(0, Math.floor(s3 / 3))
-      expN4 += pmf3[k3] * n4
-    }
-    const expGain4 = expN4 * 1.1
-
-    const gainExp: Record<TalentRarity, number> = {
-      2: 0,
-      3: expGain3,
-      4: expGain4,
-    }
-    const expectSurplus: Record<TalentRarity, number> = {
-      2: surplus2,
-      3: state.owned[3] + expGain3 - totals[3],
-      4: state.owned[4] + expGain4 - totals[4],
-    }
-
-    return {
-      boss: chainInt(2),
-      normal: chainInt(1),
-      expect: { gain: gainExp, surplus: expectSurplus },
-    }
-  }, [state.owned, totals])
-
-  // 秘境IV を n 周した後の充足確率（n=0 は現在の所持数のみ）。
-  //   Σ_outcome p × 充足確率(所持 + ドロップ, 必要数) を共通 DP で計算する。
+  // 秘境IV を 0〜上限周した後の充足確率（index = 周回数）。
   const probabilities = useMemo(
-    () =>
-      DOMAIN_RUNS.map((runs) => ({
-        runs,
-        probability: sufficiencyProbability(
-          ASC_RARITIES,
-          state.owned,
-          totals,
-          talentDomainDrops(runs),
-        ),
-      })),
-    [state.owned, totals],
+    () => talentSufficiencyByRuns(state.owned, totals, clampRuns(state.maxRuns)),
+    [state.owned, totals, state.maxRuns],
   )
 
   const updateRow = (id: string, patch: Partial<Row>) => {
@@ -146,6 +93,10 @@ export default function Talent() {
 
   const removeRow = (id: string) => {
     setState((s) => ({ ...s, rows: s.rows.filter((r) => r.id !== id) }))
+  }
+
+  const setMaxRuns = (v: number) => {
+    setState((s) => ({ ...s, maxRuns: clampRuns(v) }))
   }
 
   return (
@@ -281,69 +232,22 @@ export default function Talent() {
           </div>
         </div>
 
-        <div className="card p-4 space-y-3">
-          <h2 className="font-semibold">結果</h2>
-          <div className="overflow-x-auto">
-            <table className="table-mini">
-              <thead>
-                <tr>
-                  <th>シナリオ</th>
-                  <th></th>
-                  {RARITIES.map((r) => (
-                    <th key={r} className="text-right">
-                      {STAR(r)}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                <ScenarioRows
-                  rarities={RARITIES}
-                  title="最低（×1）"
-                  gain={carry.normal.gain}
-                  surplus={carry.normal.surplus}
-                />
-                <ScenarioRows
-                  rarities={RARITIES}
-                  title="最高（×2）"
-                  gain={carry.boss.gain}
-                  surplus={carry.boss.surplus}
-                />
-                <ScenarioRows
-                  rarities={RARITIES}
-                  title="期待値"
-                  gain={carry.expect.gain}
-                  surplus={carry.expect.surplus}
-                  decimals={1}
-                />
-              </tbody>
-            </table>
-          </div>
+        <div className="card p-4">
+          <label className="flex items-center gap-2">
+            <span className="text-sm text-neutral-400">周回数上限</span>
+            <NumberInput
+              value={state.maxRuns}
+              min={1}
+              max={MAX_RUNS_LIMIT}
+              onChange={setMaxRuns}
+            />
+          </label>
         </div>
 
-        <div className="card p-4 space-y-2">
-          <h2 className="font-semibold">充足確率</h2>
-          <div className="grid grid-cols-4 gap-2">
-            {probabilities.map(({ runs, probability }) => (
-              <div key={runs} className="min-w-0">
-                <div className="text-xs text-neutral-400">秘境 {runs}回</div>
-                <p
-                  className={`text-xl sm:text-3xl stat ${
-                    isCertain(probability)
-                      ? 'stat-pos'
-                      : isImpossible(probability)
-                        ? 'stat-neg'
-                        : 'text-neutral-100'
-                  }`}
-                >
-                  {`${(probability * 100).toFixed(1)}%`}
-                </p>
-              </div>
-            ))}
-          </div>
+        <div className="card p-4">
+          <RunsLineChart series={[{ values: probabilities }]} />
         </div>
       </div>
     </div>
   )
 }
-
