@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import PageHeader from '../components/PageHeader'
 import NumberInput from '../components/NumberInput'
+import SynthButtons from '../components/SynthButtons'
 import RunsLineChart, {
   type Marker,
   type RunsSeries,
@@ -18,6 +19,7 @@ import {
   MAX_RUNS_LIMIT,
   weaponSufficiencyByRuns,
 } from '../lib/sufficiencyByRuns'
+import { canSynth, lowerRarity, synthesize } from '../lib/synthesis'
 
 type State = {
   quality: WeaponQuality
@@ -38,12 +40,7 @@ const MAX_RUNS_MIN = 1
 const RARITIES: WeaponMatRarity[] = [5, 4, 3, 2]
 const STAR = (r: WeaponMatRarity) => `★${r}`
 const QUALITIES: WeaponQuality[] = [3, 4, 5]
-// 合成元として1つ下のレアリティを消費する個数
-const SYNTH_COST = 3
-const SYNTH_AMOUNTS = [1, 2]
-
-const lowerRarity = (r: WeaponMatRarity): WeaponMatRarity | null =>
-  r > 2 ? ((r - 1) as WeaponMatRarity) : null
+const LOWEST_RARITY: WeaponMatRarity = 2
 
 const nextBreakCost = (s: State) =>
   s.from < WEAPON_BREAK_MAX ? WEAPON_BREAK_COSTS[s.quality][s.from + 1] : null
@@ -52,14 +49,6 @@ const canEnhance = (s: State) => {
   const c = nextBreakCost(s)
   return c != null && s.owned[c.rarity] >= c.count
 }
-
-const canSynth = (s: State, r: WeaponMatRarity) => {
-  const lo = lowerRarity(r)
-  return lo != null && s.owned[lo] >= SYNTH_COST
-}
-
-const SMALL_BTN =
-  'h-6 shrink-0 flex items-center justify-center rounded bg-white/[0.04] hover:bg-white/[0.08] text-neutral-300 text-xs disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white/[0.04]'
 
 // 目標突破数ごとに固定の系列スタイル。色相を 60° 間隔で色相環順に並べ、
 // 暗い背景で読めるよう色相ごとに彩度・明度を調整している
@@ -121,16 +110,8 @@ export default function Weapon() {
 
   const synth = (r: WeaponMatRarity, n: number) => {
     setState((s) => {
-      const lo = lowerRarity(r)
-      if (lo == null || !canSynth(s, r)) return s
-      return {
-        ...s,
-        owned: {
-          ...s.owned,
-          [r]: s.owned[r] + n,
-          [lo]: s.owned[lo] - SYNTH_COST,
-        },
-      }
+      const owned = synthesize(s.owned, r, n, LOWEST_RARITY)
+      return owned == null ? s : { ...s, owned }
     })
   }
 
@@ -253,19 +234,12 @@ export default function Weapon() {
                         >
                           ＋
                         </button>
-                        {lowerRarity(r) != null &&
-                          SYNTH_AMOUNTS.map((n) => (
-                            <button
-                              key={n}
-                              type="button"
-                              tabIndex={-1}
-                              className={`${SMALL_BTN} px-1.5`}
-                              onClick={() => synth(r, n)}
-                              disabled={!canSynth(state, r)}
-                            >
-                              x{n}
-                            </button>
-                          ))}
+                        {lowerRarity(r, LOWEST_RARITY) != null && (
+                          <SynthButtons
+                            disabled={!canSynth(state.owned, r, LOWEST_RARITY)}
+                            onSynth={(n) => synth(r, n)}
+                          />
+                        )}
                       </div>
                     </td>
                   ))}
