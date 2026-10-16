@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import PageHeader from '../components/PageHeader'
 import NumberInput from '../components/NumberInput'
+import SynthButtons from '../components/SynthButtons'
 import RunsLineChart from '../components/RunsLineChart'
 import { useLocalStorage } from '../lib/useLocalStorage'
 import { fmt } from '../lib/format'
@@ -14,6 +15,7 @@ import {
   MAX_RUNS_LIMIT,
   talentSufficiencyByRuns,
 } from '../lib/sufficiencyByRuns'
+import { canSynth, lowerRarity, synthesize } from '../lib/synthesis'
 
 type Row = {
   id: string
@@ -40,6 +42,7 @@ const INITIAL: State = {
 
 const RARITIES: TalentRarity[] = [4, 3, 2]
 const STAR = (r: TalentRarity) => `★${r}`
+const LOWEST_RARITY: TalentRarity = 2
 
 const clampRuns = (v: number) =>
   Math.min(MAX_RUNS_LIMIT, Math.max(1, Math.floor(v)))
@@ -74,6 +77,13 @@ export default function Talent() {
       ...s,
       owned: { ...s.owned, [r]: Math.max(0, Math.floor(v)) },
     }))
+  }
+
+  const synth = (r: TalentRarity, n: number) => {
+    setState((s) => {
+      const owned = synthesize(s.owned, r, n, LOWEST_RARITY)
+      return owned == null ? s : { ...s, owned }
+    })
   }
 
   const addRow = () => {
@@ -222,6 +232,12 @@ export default function Talent() {
                         >
                           ＋
                         </button>
+                        {lowerRarity(r, LOWEST_RARITY) != null && (
+                          <SynthButtons
+                            disabled={!canSynth(state.owned, r, LOWEST_RARITY)}
+                            onSynth={(n) => synth(r, n)}
+                          />
+                        )}
                       </div>
                     </td>
                   ))}
